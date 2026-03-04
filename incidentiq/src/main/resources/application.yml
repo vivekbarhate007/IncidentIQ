@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: incidentiq
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/incidentiq}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:certs/public.pem
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: '{"ts":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%p","traceId":"%X{traceId}","correlationId":"%X{correlationId}","msg":"%m"}%n'
+
+server:
+  port: 3000
