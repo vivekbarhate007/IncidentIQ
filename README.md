@@ -1,53 +1,119 @@
-# IncidentIQ: Full-Stack Observability & Resilience Platform
+What this is
+Most observability tools are black boxes you plug into an existing system. IncidentIQ is built from scratch to show how those tools work internally — the polling engine, the correlation ID propagation, the idempotency key pattern, the asymmetric key exchange.
+It runs as a simulated retail environment (orders, inventory, users) with a live dashboard, a chaos injection suite, and a built-in interview demo mode.
 
-**IncidentIQ** is a high-performance observability platform designed to demonstrate enterprise-grade architectural patterns in a modern retail environment. It features a real-time incident detection engine, distributed correlation tracing, and a robust security model using asymmetric RSA encryption.
+Architecture
+┌─────────────────────────────────────────────────────────────┐
+│                        React Frontend                        │
+│         Dashboard · Orders · Audit Log · Demo Guide         │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ REST API (JWT RS256)
+┌──────────────────────────▼──────────────────────────────────┐
+│                     Node.js / Express                        │
+│                                                              │
+│  ┌─────────────────┐   ┌──────────────────┐                 │
+│  │  Auth Service   │   │   Order Service  │                 │
+│  │  RSA-256 JWT    │   │  Idempotency Key │                 │
+│  │  Public key     │   │  Exactly-once    │                 │
+│  │  verification   │   │  semantics       │                 │
+│  └─────────────────┘   └──────────────────┘                 │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Observability Engine (background)        │   │
+│  │   Polls audit_events → calculates P95 latency +      │   │
+│  │   error rates → auto-opens incidents on threshold     │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ┌─────────────────┐   ┌──────────────────┐                 │
+│  │  Correlation    │   │  Chaos Suite     │                 │
+│  │  Tracing        │   │  Inject latency  │                 │
+│  │  correlationId  │   │  Inject errors   │                 │
+│  │  HTTP → DB      │   │  Verify engine   │                 │
+│  └─────────────────┘   └──────────────────┘                 │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  SQLite DB  │
+                    │ audit_events│
+                    │   orders    │
+                    │    users    │
+                    └─────────────┘
 
-## 🚀 Key Architectural Features
+Five architectural patterns demonstrated
+1. Real-time incident detection engine
+A background polling process continuously reads the audit_events stream, calculates P95 latency and error rates across a rolling window, and automatically opens an incident record when thresholds are breached — no manual intervention needed.
+This mirrors how tools like Datadog and PagerDuty work internally, without the abstraction layer.
+2. Distributed correlation tracing
+Every inbound request gets a unique correlationId at the edge. This ID travels through HTTP headers, gets stamped on every audit log entry, and is persisted with the database record. You can take any order ID and trace the exact chain of events that produced it across the full stack.
+3. Exactly-once transaction semantics
+The OrderService uses an Idempotency-Key pattern — if the same key arrives twice (network retry, double-click), the second request returns the original result without re-executing. No duplicate orders, no corrupted inventory state.
+4. Asymmetric JWT authentication (RSA-256)
+The server generates an RSA key pair on startup. Only the public key is stored on the backend for token verification — the private signing key never touches the application server after initial key generation. A full server compromise cannot produce forged tokens.
+5. Chaos engineering suite
+Built-in "Inject Latency" and "Inject Errors" controls let you deliberately degrade the system and watch the detection engine respond in real time. This is how SRE teams verify their alerting works before an actual incident.
 
-### 1. Real-Time Incident Engine (Observability)
-The system implements a "self-healing" pattern where a background engine continuously analyzes the `audit_events` stream. It calculates P95 latency and error rates in real-time, automatically opening incidents when performance thresholds are breached.
+Tech stack
+LayerTechnologyFrontendReact 18, TypeScript, Tailwind CSS, Recharts, Lucide IconsBackendNode.js, Express, TypeScriptDatabaseSQLite (better-sqlite3)AuthJWT RS256, Node.js Crypto (RSA key generation)ToolingVite, UUID
 
-### 2. Distributed Correlation Tracing
-Every request is tagged with a unique `correlationId` at the edge. This ID is propagated through the HTTP headers, recorded in the audit logs, and persisted with the database records, allowing for end-to-end tracing of a single user action across the entire stack.
+Getting started
+bash# Clone
+git clone https://github.com/vivekbarhate007/IncidentIQ.git
+cd IncidentIQ
 
-### 3. Resilience & Idempotency
-The `OrderService` implements **Exactly-Once** semantics using an `Idempotency-Key` pattern. This ensures that network retries or client-side double-clicks do not result in duplicate orders or corrupted inventory states.
+# Install
+npm install
 
-### 4. Enterprise Security (RSA-256 JWT)
-Authentication is handled using **RSA-256 asymmetric signing**. The backend server only stores the **Public Key** for verification, ensuring that even a full server compromise does not allow an attacker to forge new identity tokens.
+# Configure environment
+cp .env.example .env
 
-### 5. Chaos Engineering Suite
-Built-in tools to "Inject Latency" and "Inject Errors" allow developers to simulate system failures and verify the responsiveness of the automated detection engine.
+# Run
+npm run dev
+Open http://localhost:3000 — the dashboard loads with simulated data already running.
 
-## 🛠️ Tech Stack
-- **Frontend**: React 18, Tailwind CSS, Lucide Icons, Recharts (Data Viz), Motion (Animations).
-- **Backend**: Node.js, Express, Better-SQLite3.
-- **Security**: JSON Web Tokens (JWT) with RS256, Crypto (RSA Key Generation).
-- **Tooling**: Vite, TypeScript, UUID (Correlation).
+Demo walkthrough
+The app includes a built-in Demo Guide tab with step-by-step instructions for showing the system to an interviewer or reviewer. The three scenarios covered:
+Scenario 1 — Trigger and detect an incident
 
-## 🎓 Interview Demo Guide
-This project includes a built-in **Demo Guide** tab designed specifically for technical interviews. It walks the interviewer through:
-1.  **Triggering an Incident**: Injecting chaos and watching the engine detect it.
-2.  **Tracing a Request**: Using a Correlation ID to find a specific order in the Audit Logs.
-3.  **Verifying Security**: Inspecting the SPKI-formatted Public Key used for JWT verification.
+Go to the Chaos tab and click "Inject Latency"
+Watch the Observability Engine detect the P95 spike within seconds
+See the incident auto-created in the Incidents panel
 
-## 📦 Installation & Setup
+Scenario 2 — Trace a request end to end
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/vivekbarhate007/IncidentIQ.git
-   cd IncidentIQ
-   ```
+Place an order from the Orders tab
+Copy the correlationId from the response
+Search for it in the Audit Log — every hop from HTTP request to DB write is visible
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+Scenario 3 — Verify the security model
 
-3. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+Log in and decode the JWT (jwt.io works)
+Note the RS256 algorithm in the header
+Check the server config — only the SPKI-formatted public key is present
 
-4. **Open the Dashboard**:
-   Navigate to `http://localhost:3000`.
+
+Project structure
+IncidentIQ/
+├── src/
+│   ├── components/       # React UI components
+│   ├── services/         # Frontend API clients
+│   └── types/            # Shared TypeScript types
+├── incidentiq/           # Backend source
+│   ├── auth/             # JWT RSA-256 auth logic
+│   ├── orders/           # OrderService + idempotency
+│   ├── observability/    # Incident detection engine
+│   └── chaos/            # Latency/error injection
+├── server.ts             # Express entry point
+├── .env.example          # Environment config template
+└── README.md
+
+Key design decisions
+Why SQLite instead of PostgreSQL?
+Zero-dependency local setup. The patterns (correlation IDs, idempotency keys, audit logs) are storage-agnostic — swapping in Postgres is a one-line connection string change.
+Why RSA-256 instead of HS256?
+HS256 uses a shared secret — anyone with the secret can both verify and forge tokens. RS256 separates signing (private key, offline) from verification (public key, on server). In a microservices environment, each service can verify tokens without ever having signing capability.
+Why a polling engine instead of event streaming?
+Simpler to run locally without Kafka or Redis. The detection logic is identical — the only difference is the trigger mechanism. The code is structured so the engine can be wired to an event bus by changing one import.
+
+Author
+Vivek Barhate — CS student at George Mason University, graduating May 2026.
+Interested in full-stack engineering, distributed systems, and AI/ML.
