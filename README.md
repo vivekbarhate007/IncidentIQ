@@ -2,42 +2,19 @@ What this is
 Most observability tools are black boxes you plug into an existing system. IncidentIQ is built from scratch to show how those tools work internally — the polling engine, the correlation ID propagation, the idempotency key pattern, the asymmetric key exchange.
 It runs as a simulated retail environment (orders, inventory, users) with a live dashboard, a chaos injection suite, and a built-in interview demo mode.
 
-Architecture
-┌─────────────────────────────────────────────────────────────┐
-│                        React Frontend                        │
-│         Dashboard · Orders · Audit Log · Demo Guide         │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ REST API (JWT RS256)
-┌──────────────────────────▼──────────────────────────────────┐
-│                     Node.js / Express                        │
-│                                                              │
-│  ┌─────────────────┐   ┌──────────────────┐                 │
-│  │  Auth Service   │   │   Order Service  │                 │
-│  │  RSA-256 JWT    │   │  Idempotency Key │                 │
-│  │  Public key     │   │  Exactly-once    │                 │
-│  │  verification   │   │  semantics       │                 │
-│  └─────────────────┘   └──────────────────┘                 │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Observability Engine (background)        │   │
-│  │   Polls audit_events → calculates P95 latency +      │   │
-│  │   error rates → auto-opens incidents on threshold     │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                              │
-│  ┌─────────────────┐   ┌──────────────────┐                 │
-│  │  Correlation    │   │  Chaos Suite     │                 │
-│  │  Tracing        │   │  Inject latency  │                 │
-│  │  correlationId  │   │  Inject errors   │                 │
-│  │  HTTP → DB      │   │  Verify engine   │                 │
-│  └─────────────────┘   └──────────────────┘                 │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                    ┌──────▼──────┐
-                    │  SQLite DB  │
-                    │ audit_events│
-                    │   orders    │
-                    │    users    │
-                    └─────────────┘
+### 🧩 System Architecture
+
+| 🧱 Layer        | ⚙️ Components                         | 📌 Key Responsibilities                        |
+|----------------|--------------------------------------|-------------------------------------------------|
+| Frontend       | React, Tailwind, Recharts            | UI dashboards, monitoring, visualization        |
+| API Layer      | REST (JWT RS256)                     | Secure API gateway, authentication              |
+| Backend        | Node.js, Express                     | Business logic, request handling                |
+| Auth           | RSA-256 JWT                          | Token signing & verification                    |
+| Orders         | Idempotency Key System               | Prevent duplicate transactions                  |
+| Observability  | Polling Engine                       | Detect latency spikes & errors                  |
+| Tracing        | Correlation ID System                | End-to-end request tracking                     |
+| Chaos          | Injection Suite                      | Simulate failures for testing                   |
+| Database       | SQLite                              | Persistent storage for system data               |
 
 Five architectural patterns demonstrated
 1. Real-time incident detection engine
