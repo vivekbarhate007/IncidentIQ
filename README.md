@@ -68,19 +68,20 @@ Note the RS256 algorithm in the header
 Check the server config — only the SPKI-formatted public key is present
 
 
-Project structure
-IncidentIQ/
+Project structure IncidentIQ/
 ├── src/
-│   ├── components/       # React UI components
-│   ├── services/         # Frontend API clients
-│   └── types/            # Shared TypeScript types
-├── incidentiq/           # Backend source
-│   ├── auth/             # JWT RSA-256 auth logic
-│   ├── orders/           # OrderService + idempotency
-│   ├── observability/    # Incident detection engine
-│   └── chaos/            # Latency/error injection
-├── server.ts             # Express entry point
-├── .env.example          # Environment config template
+│   ├── components/        # React UI components
+│   ├── services/          # Frontend API clients
+│   └── types/             # Shared TypeScript types
+│
+├── incidentiq/            # Backend source
+│   ├── auth/              # JWT RSA-256 auth logic
+│   ├── orders/            # OrderService + idempotency
+│   ├── observability/     # Incident detection engine
+│   └── chaos/             # Latency/error injection
+│
+├── server.ts              # Express entry point
+├── .env.example           # Environment config template
 └── README.md
 
 Key design decisions
