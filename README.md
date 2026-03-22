@@ -68,21 +68,22 @@ Note the RS256 algorithm in the header
 Check the server config — only the SPKI-formatted public key is present
 
 
-Project structure IncidentIQ/
-├── src/
-│   ├── components/        # React UI components
-│   ├── services/          # Frontend API clients
-│   └── types/             # Shared TypeScript types
-│
-├── incidentiq/            # Backend source
-│   ├── auth/              # JWT RSA-256 auth logic
-│   ├── orders/            # OrderService + idempotency
-│   ├── observability/     # Incident detection engine
-│   └── chaos/             # Latency/error injection
-│
-├── server.ts              # Express entry point
-├── .env.example           # Environment config template
-└── README.md
+| 📁 Directory/File   | ⚙️ Component                | 📌 Description                                 |
+|--------------------|---------------------------|--------------------------------------------------|
+| src/               | Frontend Layer            | Core React application                           |
+| ├── components/    | UI Components             | Reusable React UI elements                       |
+| ├── services/      | API Clients               | Handles communication with backend APIs          |
+| └── types/         | Type Definitions          | Shared TypeScript interfaces and types           |
+|                    |                           |                                                  |
+| incidentiq/        | Backend Layer             | Core server-side application logic               |
+| ├── auth/          | Authentication Service    | JWT RSA-256 authentication logic                 |
+| ├── orders/        | Order Service             | Handles order processing + idempotency           |
+| ├── observability/ | Detection Engine          | Incident detection & monitoring system           |
+| └── chaos/         | Chaos Suite               | Latency/error injection for testing              |
+|                    |                           |                                                  |
+| server.ts          | Entry Point               | Express server initialization                    |
+| .env.example       | Config Template           | Environment variables setup                      |
+| README.md          | Documentation             | Project overview and usage guide                 |
 
 Key design decisions
 Why SQLite instead of PostgreSQL?
